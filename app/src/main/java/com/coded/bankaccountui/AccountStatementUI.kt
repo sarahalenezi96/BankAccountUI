@@ -1,6 +1,8 @@
 package com.coded.bankaccountui
 
-
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -27,16 +29,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.sp
 
-
 @Composable
 fun AccountStatementCard(statement: AccountStatement, isEven: Boolean) {
-    val backgroundColor = if (isEven) Color.White else Color(0xFFC9CED3)
+    val backgroundColor = if (isEven) Color.White else Color(0xFFD3D8DC)
     val textColor = Color(0xFF041325)
 
     val amountColor = if (statement.transactionType == "Deposit") Color(0xFF0F934A) else Color(0xFFF43332)
@@ -69,7 +69,6 @@ fun AccountStatementCard(statement: AccountStatement, isEven: Boolean) {
                     color = textColor,
                     fontSize = 13.sp
                 )
-
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -86,7 +85,6 @@ fun AccountStatementCard(statement: AccountStatement, isEven: Boolean) {
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
                 )
-
             }
         }
     }
@@ -101,14 +99,18 @@ fun AccountStatementList(statements: List<AccountStatement>) {
     ) {
         itemsIndexed(statements) { index, statement ->
             AccountStatementCard(statement = statement, isEven = index % 2 == 0)
-            HorizontalDivider()
+            // show divider between cards, not after the last one
+            if (index != statements.lastIndex) {
+                HorizontalDivider()
+            }
         }
     }
 }
+
 @Composable
 fun AccountStatementScreen(modifier: Modifier = Modifier) {
     var selectedFilter by remember { mutableStateOf("All") }
-    var sortOption by remember { mutableStateOf("Sort") }
+    var sortDescending by remember { mutableStateOf(true) }
     var dropdownExpanded by remember { mutableStateOf(false) }
 
     val dummyStatements = listOf(
@@ -128,10 +130,10 @@ fun AccountStatementScreen(modifier: Modifier = Modifier) {
         selectedFilter == "All" || it.transactionType == selectedFilter
     }
 
-    val sortedList = when (sortOption) {
-        "Recent to Oldest" -> filteredList.sortedByDescending { it.date }
-        "Oldest to Recent" -> filteredList.sortedBy { it.date }
-        else -> filteredList
+    val sortedList = if (sortDescending) {
+        filteredList.sortedByDescending { it.date }
+    } else {
+        filteredList.sortedBy { it.date }
     }
 
     Column(
@@ -139,14 +141,14 @@ fun AccountStatementScreen(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFF011734), Color(0xFF7C7F8F))
+                    colors = listOf(Color(0xFF011734), Color(0xFF1C4E75))
                 )
             )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(110.dp),
+                .height(90.dp), //  spacing above title
             contentAlignment = Alignment.BottomStart
         ) {
             Text(
@@ -165,6 +167,7 @@ fun AccountStatementScreen(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Filter (Chips)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 listOf("All", "Deposit", "Withdraw").forEach { option ->
                     val isSelected = selectedFilter == option
@@ -203,11 +206,32 @@ fun AccountStatementScreen(modifier: Modifier = Modifier) {
                     }
                 }
             }
-
+//sort
             Box {
-                OutlinedButton(onClick = { dropdownExpanded = true }) {
-                    Text(sortOption, color = Color(0xFFCCCCCC))
-                    //Backgr = Color(0xFF2E3B4E)
+                OutlinedButton(
+                    onClick = { dropdownExpanded = true },
+                    modifier = Modifier.height(32.dp),
+                    shape = FilterChipDefaults.shape,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Color(0xFF2E3B4E),
+                        contentColor = Color(0xFFCCCCCC)
+                    ),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Sort",
+                            fontSize = 14.sp,
+                            color = Color(0xFFCCCCCC)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Filled.ArrowDropDown, // an arrow to indicate a dropdown menu
+                            contentDescription = "Dropdown",
+                            tint = Color(0xFFCCCCCC),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
 
                 DropdownMenu(
@@ -217,14 +241,14 @@ fun AccountStatementScreen(modifier: Modifier = Modifier) {
                     DropdownMenuItem(
                         text = { Text("Recent to Oldest") },
                         onClick = {
-                            sortOption = "Sort"
+                            sortDescending = true
                             dropdownExpanded = false
                         }
                     )
                     DropdownMenuItem(
                         text = { Text("Oldest to Recent") },
                         onClick = {
-                            sortOption = "Sort"
+                            sortDescending = false
                             dropdownExpanded = false
                         }
                     )
@@ -232,6 +256,7 @@ fun AccountStatementScreen(modifier: Modifier = Modifier) {
             }
         }
 
+        // statements list
         AccountStatementList(statements = sortedList)
     }
 }
