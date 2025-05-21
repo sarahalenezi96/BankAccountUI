@@ -1,10 +1,16 @@
 package com.coded.bankaccountui
 
+
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -18,8 +24,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.Image
+import androidx.compose.material3.ElevatedFilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
 
 
@@ -94,9 +105,12 @@ fun AccountStatementList(statements: List<AccountStatement>) {
         }
     }
 }
-
 @Composable
 fun AccountStatementScreen(modifier: Modifier = Modifier) {
+    var selectedFilter by remember { mutableStateOf("All") }
+    var sortOption by remember { mutableStateOf("Sort") }
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
     val dummyStatements = listOf(
         AccountStatement("2025-05-01", "Salary", "Deposit", 1500.0, 1500.0),
         AccountStatement("2025-05-02", "Grocery", "Withdraw", 100.0, 1400.0),
@@ -110,36 +124,114 @@ fun AccountStatementScreen(modifier: Modifier = Modifier) {
         AccountStatement("2025-05-10", "Phone Bill", "Withdraw", 20.0, 1485.0)
     )
 
-    val gradientBackground = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFF041325),
-            Color(0xFF144F91)
-        )
-    )
+    val filteredList = dummyStatements.filter {
+        selectedFilter == "All" || it.transactionType == selectedFilter
+    }
+
+    val sortedList = when (sortOption) {
+        "Recent to Oldest" -> filteredList.sortedByDescending { it.date }
+        "Oldest to Recent" -> filteredList.sortedBy { it.date }
+        else -> filteredList
+    }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .background(brush = gradientBackground)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFF011734), Color(0xFF7C7F8F))
+                )
+            )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp),
+                .height(110.dp),
             contentAlignment = Alignment.BottomStart
         ) {
             Text(
                 text = "Account Statement",
                 color = Color.White,
-                style = TextStyle(
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                modifier = Modifier.padding(start = 20.dp, bottom = 16.dp)
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 20.dp, bottom = 8.dp)
             )
-
         }
 
-        AccountStatementList(statements = dummyStatements)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                listOf("All", "Deposit", "Withdraw").forEach { option ->
+                    val isSelected = selectedFilter == option
+
+                    if (isSelected) {
+                        ElevatedFilterChip(
+                            selected = true,
+                            onClick = { selectedFilter = option },
+                            label = {
+                                Text(
+                                    text = option,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0A2647)
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = Color.White
+                            )
+                        )
+                    } else {
+                        FilterChip(
+                            selected = false,
+                            onClick = { selectedFilter = option },
+                            label = {
+                                Text(
+                                    text = option,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFFCCCCCC)
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = Color(0xFF2E3B4E)
+                            )
+                        )
+                    }
+                }
+            }
+
+            Box {
+                OutlinedButton(onClick = { dropdownExpanded = true }) {
+                    Text(sortOption, color = Color(0xFFCCCCCC))
+                    //Backgr = Color(0xFF2E3B4E)
+                }
+
+                DropdownMenu(
+                    expanded = dropdownExpanded,
+                    onDismissRequest = { dropdownExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Recent to Oldest") },
+                        onClick = {
+                            sortOption = "Sort"
+                            dropdownExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Oldest to Recent") },
+                        onClick = {
+                            sortOption = "Sort"
+                            dropdownExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        AccountStatementList(statements = sortedList)
     }
 }
